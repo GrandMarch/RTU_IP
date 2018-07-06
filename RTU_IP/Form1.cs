@@ -11,6 +11,7 @@ namespace RTU_IP
 {    
     public partial class Form1 : Form,ILog, IDisposable
     {
+        
         private ModBusTCPWrapper Wrapper = null;
         #region ILog 成员
         public void Write(string log)
@@ -48,51 +49,62 @@ namespace RTU_IP
             }
         }
 
-        private void btnConnect_Click(object sender, EventArgs e)
-        {
-            bool checkFlag = false;
-            checkFlag = IPCheck.IsIPAddress(txtIP.Text.Trim());// 检查IP是否合法
-            if (!checkFlag)//如果IP地址出错那么给出错误提示并返回函数
-            {
-                MessageBox.Show("IP地址错误！", "Error");
-                return;
-            }
-            checkFlag = IPCheck.IsIPPort(txtPort.Text.Trim());//检查端口是否合法
-            if (!checkFlag)//如果端口设置错误那么给出错误提示并返回函数
-            {
-                MessageBox.Show("端口设置错误！", "Error");
-                return;
-            }
-            //检查都通过的话全局变量赋值
-            GlobalTag.IP = txtIP.Text.Trim();
-            GlobalTag.Port = Convert.ToInt32(txtPort.Text.Trim());
-            //建立连接
-            this.Wrapper = new ModBusTCPWrapper();
-            this.Wrapper.Logger = this;
-            try
-            {
-                this.Wrapper.Receive(1, 0, 1, 0x03);//尝试读取一个寄存器
-                GlobalTag.SocketConnected = true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message,"错误",MessageBoxButtons.OKCancel,MessageBoxIcon.Error);
-                
-                GlobalTag.SocketConnected = false;//捕获到异常那么就是没有建立成功
-            }
-            if (GlobalTag.SocketConnected)
-            {
-                constatus.Text = "已连接";
-                //btnReadConfig.Enabled = false;
-            }
-            else
-            {
-                constatus.Text = "未连接";
-                //btnReadConfig.Enabled = false;
-            }
-        }
+        //private void btnConnect_Click(object sender, EventArgs e)
+        //{
+        //    bool checkFlag = false;
+        //    checkFlag = IPCheck.IsIPAddress(txtIP.Text.Trim());// 检查IP是否合法
+        //    if (!checkFlag)//如果IP地址出错那么给出错误提示并返回函数
+        //    {
+        //        MessageBox.Show("IP地址错误！", "Error");
+        //        return;
+        //    }
+        //    checkFlag = IPCheck.IsIPPort(txtID.Text.Trim());//检查ID是否合法
+        //    if (!checkFlag)//如果端口设置错误那么给出错误提示并返回函数
+        //    {
+        //        MessageBox.Show("端口设置错误！", "Error");
+        //        return;
+        //    }
+        //    检查都通过的话全局变量赋值
+        //    GlobalTag.IP = txtIP.Text.Trim();
+        //    GlobalTag.Port = Convert.ToInt32(txtID.Text.Trim());
+        //    建立连接
+        //    this.Wrapper = new ModBusTCPWrapper();
+        //    this.Wrapper.Logger = this;
+        //    try
+        //    {
+        //        this.Wrapper.Receive(1, 0, 1, 0x03);//尝试读取一个寄存器
+        //        GlobalTag.SocketConnected = true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message, "错误", MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
+
+        //        GlobalTag.SocketConnected = false;//捕获到异常那么就是没有建立成功
+        //    }
+        //    if (GlobalTag.SocketConnected)
+        //    {
+        //        constatus.Text = "已连接";
+        //        btnReadConfig.Enabled = false;
+        //    }
+        //    else
+        //    {
+        //        constatus.Text = "未连接";
+        //        btnReadConfig.Enabled = false;
+        //    }
+        //}
         private void btnReadConfig_Click(object sender, EventArgs e)
         {
+            btnReadConfig.Enabled = false;
+            if (!(IPCheck.IsIPAddress(txtIP.Text.Trim()) && IPCheck.IsIPPort(txtID.Text.Trim())))
+            {
+                MessageBox.Show("IP/ID设置错误！", "Error");
+                btnReadConfig.Enabled = true;
+                return;
+            }
+            //建立连接
+            this.Wrapper = new ModBusTCPWrapper(txtIP.Text.Trim(),502,byte.Parse(txtID.Text.Trim()));
+            this.Wrapper.Logger = this;
+
             byte[] resualt=null;
             try
             {
@@ -100,11 +112,15 @@ namespace RTU_IP
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.Message,"Error");
+                btnReadConfig.Enabled = true;
+                return;
             }
-            if (resualt == null)
+            if ((resualt == null)||((resualt.Length<=0)))
             {
-                MessageBox.Show("读取配置命令返回的数据长度错误", "读取错误");
+                MessageBox.Show("读取配置命令返回的数据长度错误", "Error");
+                btnReadConfig.Enabled = true;
+                return;
             }
             else
             {
@@ -119,7 +135,8 @@ namespace RTU_IP
                 //value=ValueHelper.Instance.GetShort(data);
                 txtReadServerPort.Text = value.ToString();
                 txtReadServerIP.Text = Convert.ToInt16(resualt[25]).ToString() + "." + Convert.ToInt16(resualt[26]).ToString() + "." + Convert.ToInt16(resualt[27]).ToString() + "." + Convert.ToInt16(resualt[28]).ToString();
-            }            
+            }
+            btnReadConfig.Enabled = true;
         }
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -129,6 +146,12 @@ namespace RTU_IP
         
         private void btnSetConfig_Click(object sender, EventArgs e)
         {
+            btnSetConfig.Enabled = false;
+
+            //建立连接
+            this.Wrapper = new ModBusTCPWrapper(txtIP.Text.Trim(), 502, byte.Parse(txtID.Text.Trim()));
+            this.Wrapper.Logger = this;
+
             List<byte> datas = new List<byte>();
             string[] str = txtReadMAC.Text.Split('-');//将mac地址转换为bytes
             foreach (string ss in str)
@@ -163,19 +186,28 @@ namespace RTU_IP
             {
                 datas.Add(Convert.ToByte(ss));
             }
-            this.Wrapper.SetConfigration(datas.ToArray());//发送数据
+            try
+            {
+                this.Wrapper.SetConfigration(datas.ToArray());//发送数据
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error");
+            }
+            btnSetConfig.Enabled = true;
         }
-    }
-    #region 静态类GlobalTag，所有的全局变量在此处定义
-    public static class GlobalTag
-    {
-        public const  int MAX_LENGTH = 256;//socket接收数据最大的数据长度
-        public static string IP = "127.0.0.1";//modbus从站的IP
-        public static int Port = 502;//modbus从站的端口
-        public static int TimeOut = 1000;//socket超时时间
-        public static bool SocketConnected = false;
-       
-    }
-    #endregion
-    
+
+        private void txtID_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+              int.Parse(txtID.Text.Trim());
+            }
+            catch
+            {
+                MessageBox.Show("ID Error");
+                txtID.Text ="1";
+            }
+        }
+    }   
 }

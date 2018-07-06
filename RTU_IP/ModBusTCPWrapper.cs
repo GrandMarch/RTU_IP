@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Configuration;
 using System.Windows.Forms;
+using System.Net;
 namespace RTU_IP
 {
     public enum FunctionCode : byte
@@ -22,18 +23,32 @@ namespace RTU_IP
     class ModBusTCPWrapper : IDisposable
     {
         //public static ModBusTCPWrapper Instance = new ModBusTCPWrapper();
-        private SocketWrapper socketWrapper = new SocketWrapper();
+        private string IP;
+        private int Port=502;
+        private byte ID = 1;
+        private SocketWrapper socketWrapper;
+        public ModBusTCPWrapper(string sIP,int iPort,byte iID)
+        {
+            IP = sIP;
+            Port = iPort;
+            ID = iID;
+            socketWrapper = new SocketWrapper(sIP, iPort, iID);
+        }
+
         bool connected = false;
         public ILog Logger { get; set; }
         public  void Connect()
         {
-            if (!connected)
-            {
-                this.socketWrapper.Logger = this.Logger;
-                this.socketWrapper.Connect();
-                this.connected = true;
-            }
+            this.socketWrapper.Logger = this.Logger;
+            this.socketWrapper.Connect();
+            this.connected = true;
         }
+        public void DisConnect()
+        {
+            socketWrapper.Disconnect();
+            connected = false;
+        }
+
         public  byte[] ReadConfigration()
         {
             this.Connect();
@@ -42,7 +57,7 @@ namespace RTU_IP
             sendData.AddRange(ValueHelper.Instance.GetBytes(this.NextDataIndex()));//1~2.(Transaction Identifier)
             sendData.AddRange(new Byte[] { 0, 0 });//3~4:Protocol Identifier,0 = MODBUS protocol
             sendData.AddRange(ValueHelper.Instance.GetBytes((short)2));//5~6:后续的Byte数量（针对读读取配置后面有2个byte）
-            sendData.Add(1);//7:Unit Identifier:This field is used for intra-system routing purpose.
+            sendData.Add(ID);//7:Unit Identifier:This field is used for intra-system routing purpose.
             sendData.Add(0x62);//8.Function Code 
             socketWrapper.Write(sendData.ToArray()); //发送读请求
 
@@ -68,7 +83,8 @@ namespace RTU_IP
             {
                 result = null;
             }
-            return result;
+            DisConnect();
+            return result;          
         }
         public  byte[] Receive(short DevNum,short StartAddr,short RegNum,byte Command)//支持3和4号命令
         {
@@ -109,7 +125,7 @@ namespace RTU_IP
             values.AddRange(ValueHelper.Instance.GetBytes(this.NextDataIndex()));//1~2.(Transaction Identifier)
             values.AddRange(new Byte[] { 0, 0 });//3~4:Protocol Identifier,0 = MODBUS protocol
             values.AddRange(ValueHelper.Instance.GetBytes((byte)(0x1F)));//5~6:后续的Byte数量,固定长度
-            values.Add(1);//7:Unit Identifier:This field is used for intra-system routing purpose.
+            values.Add(ID);//7:Unit Identifier:This field is used for intra-system routing purpose.
             values.Add((byte)0x63);//8.Function Code : 16 (Write Multiple Register)
             //values.AddRange(ValueHelper.Instance.GetBytes(StartingAddress));//9~10.起始地址
             //values.AddRange(ValueHelper.Instance.GetBytes((short)(data.Length / 2)));//11~12.寄存器数量
@@ -127,6 +143,7 @@ namespace RTU_IP
             //[5].读取Response: 写完后读取返回结果
             /*暂时先不读取返回的数据*/
             byte[] responseHeader = this.socketWrapper.Read();
+            this.DisConnect();
         }
         #region Transaction Identifier
         /// <summary>

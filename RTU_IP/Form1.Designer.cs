@@ -53,7 +53,7 @@
             this.btnConnect = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
-            this.txtPort = new System.Windows.Forms.TextBox();
+            this.txtID = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.txtIP = new System.Windows.Forms.TextBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
@@ -264,7 +264,7 @@
             this.groupBox1.Controls.Add(this.btnConnect);
             this.groupBox1.Controls.Add(this.button1);
             this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.txtPort);
+            this.groupBox1.Controls.Add(this.txtID);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.txtIP);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
@@ -282,7 +282,7 @@
             this.btnConnect.TabIndex = 4;
             this.btnConnect.Text = "连接";
             this.btnConnect.UseVisualStyleBackColor = true;
-            this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
+            this.btnConnect.Visible = false;
             // 
             // button1
             // 
@@ -300,17 +300,18 @@
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(154, 31);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(41, 12);
+            this.label2.Size = new System.Drawing.Size(29, 12);
             this.label2.TabIndex = 3;
-            this.label2.Text = "Port：";
+            this.label2.Text = "ID：";
             // 
-            // txtPort
+            // txtID
             // 
-            this.txtPort.Location = new System.Drawing.Point(198, 25);
-            this.txtPort.Name = "txtPort";
-            this.txtPort.Size = new System.Drawing.Size(54, 21);
-            this.txtPort.TabIndex = 2;
-            this.txtPort.Text = "502";
+            this.txtID.Location = new System.Drawing.Point(198, 25);
+            this.txtID.Name = "txtID";
+            this.txtID.Size = new System.Drawing.Size(54, 21);
+            this.txtID.TabIndex = 2;
+            this.txtID.Text = "1";
+            this.txtID.TextChanged += new System.EventHandler(this.txtID_TextChanged);
             // 
             // label1
             // 
@@ -366,8 +367,9 @@
             // constatus
             // 
             this.constatus.Name = "constatus";
-            this.constatus.Size = new System.Drawing.Size(44, 17);
+            this.constatus.Size = new System.Drawing.Size(46, 17);
             this.constatus.Text = "未连接";
+            this.constatus.Visible = false;
             // 
             // Form1
             // 
@@ -381,7 +383,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "IP地址修改";
+            this.Text = "RTU IP Tool V2";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.groupBox3.ResumeLayout(false);
@@ -416,7 +418,7 @@
         private System.Windows.Forms.TextBox txtReadMAC;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.TextBox txtPort;
+        private System.Windows.Forms.TextBox txtID;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox txtIP;
         private System.Windows.Forms.Button btnSetConfig;

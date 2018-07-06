@@ -20,7 +20,7 @@ namespace RTU_IP
             bool isPort = false;
             int portNum;
             isPort = Int32.TryParse(port, out portNum);
-            if (isPort && portNum >= 0 && portNum <= 65535)
+            if (isPort && portNum >= 0 && portNum <= 256)
             {
                 isPort = true;
             }

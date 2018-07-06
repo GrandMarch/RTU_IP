@@ -19,18 +19,32 @@ namespace RTU_IP
 
         public ILog Logger { get; set; }//
         private Socket socket = null;//创建一个socket套接字
-
+        private string IP;
+        private int Port = 502;
+        private int ID = 1;
+        public SocketWrapper(string sIP, int iPort, int iID)
+        {
+            IP = sIP;
+            Port = iPort;
+            ID = iID;
+        }
         public void Connect()
         {
             this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            this.socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, GlobalTag.TimeOut);
-            IPEndPoint ip = new IPEndPoint(IPAddress.Parse(GlobalTag.IP), GlobalTag.Port);
+            this.socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout,1000);
+            IPEndPoint ip = new IPEndPoint(IPAddress.Parse(IP), Port);
             this.socket.Connect(ip);
         }
+        public void Disconnect()
+        {
+            socket.Disconnect(false);
+            Dispose();
+        }
+
         public byte[] Read()//读取数据
         {
             //创建一个最大长度大的数据准备接受数据，如果数据超过了最大长度的话那么需要重新定义MAX_LENGTH的长度并重新编译
-            byte[] data = new byte[GlobalTag.MAX_LENGTH];
+            byte[] data = new byte[256];
             int rNumber = 0;//指示读取到的数据的长度
             rNumber=this.socket.Receive(data);
             byte[] result = new byte[rNumber];//保存最后的有效的数据
